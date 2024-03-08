@@ -1,0 +1,137 @@
+import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib import colors
+from matplotlib.colors import ListedColormap
+from matplotlib.colors import LinearSegmentedColormap
+import sys
+import wrf
+
+VAR_name = 'MRC'
+Simulation = 'dx=200m'
+
+### cross-section height in meters
+height =1000
+
+### zoomed domain coordinates
+left = 8.18
+bottom = 41.47
+right = 8.42
+top = 41.65
+
+### trace coordinates in geographical coordinates
+lon_start = 8.275
+lat_start = 41.628
+lon_end = 8.365
+lat_end = 41.55
+
+#########################
+### Read Meso-NH data ###
+#########################
+
+### Données Simulation
+ncfile= xr.open_dataset("/gpfs/work/p20024/lfarh/ADRIA/ADRIA.1.SEG04.001DIA3D.nc", mask_and_scale=True, decode_times=True, decode_coords=True)
+
+### read data
+time = ncfile.coords['time']
+longitude = ncfile.coords['longitude'][0,:].values
+latitude = ncfile.coords['latitude'][:,0].values
+XHAT = ncfile.coords['XHAT'].values
+
+### define zoom
+x0 = np.searchsorted( longitude, left )
+x1 = np.searchsorted( longitude, right )
+y0 = np.searchsorted( latitude, bottom )
+y1 = np.searchsorted( latitude, top )
+
+### read varible of interest
+VAR = ncfile.data_vars[VAR_name][0,:,y0:y1,x0:x1]
+ 
+###  read and compute wind speed
+U = ncfile.data_vars['UT'][0,:,y0:y1,x0:x1]
+V = ncfile.data_vars['VT'][0,:,y0:y1,x0:x1]
+WIND = np.sqrt( U.values**2 + V.values**2 )
+
+### coordinates
+U.coords['ni_u'] = U.coords['longitude_u'][0,:].values
+U.coords['nj_u'] = U.coords['latitude_u'][:,0].values
+
+V.coords['ni_v'] = V.coords['longitude_v'][0,:].values
+V.coords['nj_v'] = V.coords['latitude_v'][:,0].values
+
+### read orography
+#ZS =  ncfile.data_vars['ZS'][y0:y1,x0:x1]
+
+### read altitude
+ALT =  ncfile.data_vars['ALT'][:,y0:y1,x0:x1]
+
+### assign coordinates
+for field in ALT,VAR,MRC:
+    field.coords['ni'] = longitude[x0:x1]
+    field.coords['nj'] = latitude[y0:y1]
+
+###################################
+### compute cross-section ###
+print("compute cross-section")
+#################################"
+
+### interpolate
+VAR_section = wrf.interplevel( field3d=VAR, vert=ALT, desiredlev=height )
+WIND_section = wrf.interplevel( field3d=WIND, vert=ALT, desiredlev=height )
+MRC_section = wrf.interplevel( field3d=MRC, vert=ALT, desiredlev=height )
+
+### assign coordinates
+WIND_section['dim_1'] = VAR_section['nj'].values
+WIND_section['dim_2'] = VAR_section['ni'].values
+WIND_section.name = 'Wind speed ($m.s^{-1}$)'
+
+###################
+### plot figure ###
+###################
+
+### open figure
+plt.figure()
+ax = plt.axes()
+
+def CustomColormap(Name = 'default'):
+   if Name == 'test':
+       ChoosedBlue =  'lightblue'
+       CustCmap = colors.LinearSegmentedColormap.from_list('',
+                                                     ['lightgrey',
+                                                      ChoosedBlue,
+                                                      ChoosedBlue,
+                                                      ChoosedBlue,
+                                                      'lightskyblue',
+                                                      'lightskyblue',
+                                                      'khaki',
+                                                      'khaki',
+                                                      'gold',
+                                                      'blueviolet',
+                                                      'blueviolet',
+                                                      'rebeccapurple',
+                                                      'rebeccapurple'
+                                                         ])   
+
+       my_cmap = CustCmap(np.arange(CustCmap.N))
+       my_cmap[:, -1] = np.linspace(0.3, 1, CustCmap.N)
+       CustCmap = ListedColormap(my_cmap)
+   return CustCmap
+
+CustCmap = CustomColormap('test')
+
+### plot surfaces
+VAR_section[1:-1,1:-1].plot.contourf( cmap='Pastel1_r', levels=np.arange(0,0.8,0.005))
+
+### add orography
+ZS[1:-1,1:-1].plot.contour( colors="black",levels=[0])
+
+### add trace coordinates
+plt.plot( [lon_start,lon_end], [lat_start,lat_end], linewidth=2, color='black' )
+
+plt.xlabel('Longitude (°E)')
+plt.ylabel('Latitude (°N)')
+
+plt.savefig('CH_Meso1000_MRC_1515_level1000.png')
+
+
