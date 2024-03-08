@@ -1,0 +1,130 @@
+import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib import colors
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+import sys
+import wrf
+
+Resolution = '200m'
+
+### Données Simulation
+ncfile3D= xr.open_dataset("/gpfs/work/p20024/lfarh/ADRIA/ADRIA.2.SEG04.001DIA3D.nc", mask_and_scale=True, decode_times=True, decode_coords=True)
+
+### Données Simulations 2D
+ncfile2D= xr.open_dataset("/gpfs/work/p20024/lfarh/ADRIA/DIAG2D/ADRIA.2.SEG04.001DIA2D.nc", mask_and_scale=True, decode_times=True, decode_coords=True)
+
+####Coordonnées de la coupe verticale
+lon_start = 8.29
+lat_start = 41.65
+lon_end = 8.35
+lat_end = 41.525
+
+### read coordinates
+longitude = ncfile3D.coords['longitude'][0,:].values
+latitude = ncfile3D.coords['latitude'][:,0].values
+time = ncfile3D.coords['time']
+LON = ncfile3D.coords['longitude']
+LAT = ncfile3D.coords['latitude']
+XHAT = ncfile3D.data_vars['XHAT']
+YHAT = ncfile3D.data_vars['YHAT']
+ALT = ncfile3D.data_vars['ALT']
+
+### define zoom
+x0 = np.searchsorted( longitude, lon_start )
+x1 = np.searchsorted( longitude, lon_end )
+y0 = np.searchsorted( latitude, lat_start )
+y1 = np.searchsorted( latitude, lat_end )
+
+### read variables 
+VAR = ncfile2D.data_vars['HBLTOP'][0,:,:]
+MRC = ncfile3D.data_vars['MRC'][0,:,:,:]
+WT = ncfile3D.data_vars['WT'][0,:,:,:]
+
+### compute wind speed
+U = ncfile3D.data_vars['UT'][0,:,:,:]
+V = ncfile3D.data_vars['VT'][0,:,:,:]
+WIND = np.sqrt( U.values**2 + V.values**2 )
+
+### define vertical levels
+height_min = 0   # in m
+height_max = 2000  # in m
+height_interval = 50   # in m
+height = np.linspace( height_min, height_max, height_interval )
+
+### interpolate
+WIND_section = wrf.vertcross( field3d=WIND, vert=ALT.values, start_point=wrf.CoordPair(x0,y0), end_point=wrf.CoordPair(x1,y1), levels=height )
+LON_section = wrf.interpline( field2d=LON.values, start_point=wrf.CoordPair(x0,y0), end_point=wrf.CoordPair(x1,y1) )
+WT_section = wrf.vertcross( field3d=WT.values, vert=ALT.values, start_point=wrf.CoordPair(x0,y0), end_point=wrf.CoordPair(x1,y1), levels=height )
+MRC_section = wrf.vertcross( field3d=MRC.values, vert=ALT.values, start_point=wrf.CoordPair(x0,y0), end_point=wrf.CoordPair(x1,y1), levels=height )
+LON_section = wrf.interpline( field2d=LON.values, start_point=wrf.CoordPair(x0,y0), end_point=wrf.CoordPair(x1,y1) )
+VAR_section = wrf.interpline( field2d=VAR.values, start_point=wrf.CoordPair(x0,y0), end_point=wrf.CoordPair(x1,y1) )
+
+### assign coordinates
+distance_max = np.sqrt( (XHAT[x1]-XHAT[x0])**2 + (YHAT[y1]-YHAT[y0])**2 ) * 1.e-3   # in km
+distance = np.linspace( 0, distance_max, WIND_section.sizes['dim_1'] )
+
+WT_section.name = 'Vertical Wind speed (m/s)'
+WT_section['dim_0'] = height
+WT_section['dim_1'] = distance
+#WT_section['dim_1'] = LATLON_section.values
+
+WIND_section.name = 'Wind speed ($m.s^{-1}$)'
+WIND_section['dim_0'] = height
+WIND_section['dim_1'] = distance
+#WIND_section['dim_1'] = LATLON_section.values
+
+MRC_section.name = 'Mixing Ratio for Cloud (g/kg)'
+MRC_section['dim_0'] = height
+MRC_section['dim_1'] = distance
+#REHU_section['dim_1'] = LATLON_section.values
+
+### open figure
+plt.figure()
+ax = plt.axes()
+
+###Customize colormap
+def CustomColormap(Name = 'default'):
+
+    if Name == 'Test':
+        ChoosedBlue =  'lightblue'
+        CustCmap = colors.LinearSegmentedColormap.from_list('',
+                                                     ['lightgrey',
+                                                      ChoosedBlue,
+                                                      ChoosedBlue,
+                                                      ChoosedBlue,
+                                                      'lightskyblue',
+                                                      'lightskyblue',
+                                                      'khaki',
+                                                      'khaki',
+                                                      'gold',
+                                                      'blueviolet', 
+                                                      'blueviolet',
+                                                      'rebeccapurple',
+                                                      'rebeccapurple'
+                                                         ])
+
+        my_cmap = CustCmap(np.arange(CustCmap.N))
+        my_cmap[:, -1] = np.linspace(0.3, 1, CustCmap.N)
+        CustCmap = ListedColormap(my_cmap)
+
+    return CustCmap
+CustCmap = CustomColormap('Test')
+
+### plot surfaces
+
+surfaces = WIND_section.plot.contourf( cmap=CustCmap, levels=np.arange(25,58,1))
+
+### add contours
+contours1 = WT_section.plot.contour( colors='black', levels=[1],linewidth=0.5)
+contours2 = WT_section.plot.contour( colors='black' ,levels=[-1])
+
+ax.set_xlabel("Distance (km)")
+ax.set_ylabel("Height (m)")
+plt.title(time[0].values)
+plt.savefig( 'CV_WIND_'+Resolution+'_15h15.pdf' )
+
+	
+
+
