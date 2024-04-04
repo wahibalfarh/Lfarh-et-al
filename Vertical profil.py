@@ -5,9 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-### define simulations
-EXP = '200m'
-
 ### define variable
 varname = 'SBG_KM'
 #varname = 'MEAN_THV'
