@@ -6,13 +6,12 @@
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+
 
 
 ### define variable
 varname_res= 'RES_WU'
 varname_sbg= 'SBG_WU'
-
 
 ###########################
 #    Read Meso-NH data    #
