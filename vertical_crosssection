@@ -1,3 +1,6 @@
+#####################################################################
+#                      IMPORT LIBRAIRIES                            #
+#####################################################################
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,22 +10,33 @@ from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import sys
 import wrf
 
-####Données Simulation
-###1530
+#####################################################################
+#                      READ DATA AT 1530 UTC                        #
+#####################################################################
+### COARE3 ###
 #ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/COARE/ADRIA.2.SEG04.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
-#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NDREA/NDREA.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
-#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/ECUME/ECUME.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
-#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/WASP/WASP2.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
-#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOSEN/NOSEN.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
-#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOLAT/NOLAT.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
-ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOMOM/NOMOM.2.SEG02.001DIA3D.nc", mask_and_scale=True, decode_times=True)
-
-####Données Simulations 2D
-###1530
 #ncfile2D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/COARE/ADRIA.2.SEG04.002DIA2D.zoom.nc", mask_and_scale=True, decode_times=True)
+
+### ANDREAS ###
+#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NDREA/NDREA.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+
+### ECUME6 ###
+#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/ECUME/ECUME.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+
+### WASP ###
+#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/WASP/WASP2.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+
+### NoH ###
+#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOSEN/NOSEN.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+
+### NoLE
+#ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOLAT/NOLAT.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+
+### NoM ###
+ncfile3D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOMOM/NOMOM.2.SEG02.001DIA3D.nc", mask_and_scale=True, decode_times=True)
 ncfile2D = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOMOM/NOMOM.2.SEG02.001DIA2D.nc", mask_and_scale=True, decode_times=True)
 
-###1530
+### location of the vertical section ###
 lon_start =  8.38
 lat_start = 41.758
 lon_end = 8.55
@@ -48,7 +62,6 @@ LAT = ncfile3D.coords['latitude']
 XHAT = ncfile3D.data_vars['XHAT']
 YHAT = ncfile3D.data_vars['YHAT']
 ALT = ncfile3D.data_vars['ALT']
-
 
 ### define zoom
 x0 = np.searchsorted( longitude, lon_start )
@@ -156,15 +169,11 @@ CustCmap = CustomColormap('Test')
 
 
 ### plot surfaces
-
 #surfaces = WIND_section.plot.contourf( cmap=CustCmap, levels=np.arange(20,59,0.5))
 #surfaces = MRC_section.plot.contourf( cmap='Pastel1_r', levels=np.arange(0,0.5,0.01))
 #surfaces = WT_section.plot.contourf( cmap='bwr', levels=np.arange(-3.5,3.7,0.1))
-
 surfaces = wind_normal_section.plot.contourf( cmap=CustCmap, levels=np.arange(20,65,0.5))
-#surfaces = wind_tangent_section.plot.contourf( cmap='seismic', levels=np.arange(-10,10,1) )
 
-#cbar = plt.colorbar(surfaces)
 
 ### add contours
 #contours1 = WT_section.plot.contour( colors='black', levels=[1],linewidth=0.5)
@@ -194,9 +203,8 @@ ax.quiver(WT_section['dim_1'][::interval_x],WT_section['dim_0'][::interval_z],
 plt.legend(title='NoM',loc=2)
 ax.set_xlabel("Distance (km)")
 ax.set_ylabel("Height (m)")
-#plt.savefig( 'CV_COARE_MRC_1530.png' )
-#plt.savefig( 'CV_COARE_MRC_1530_angle'+str(angle)+'.png' )
-plt.savefig( 'CV_NoM_WIND_1530_new.png' )
+plt.savefig( 'CV_COARE_MRC_1530_angle'+str(angle)+'.png' )
+
 
 	
 
