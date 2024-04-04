@@ -143,28 +143,16 @@ for Inst_nomom in range(len(times)):
     Perc99_list_nomom_sea.append(np.percentile(WindSpeed_nomom_sea,99))
     Perc99_list_nomom_land.append(np.percentile(WindSpeed_nomom_land,99))
 
-
-#fig, ax1 = plt.subplots(figsize=(12,8))
+### Plot figure
 
 plt.plot(times_list,Perc99_list_coare_sea,color='green',linestyle='-',label="Coare ")
 plt.plot(times_list,Perc99_list_andrea_sea,color='royalblue',linestyle='-',label="Andreas")
 plt.plot(times_list,Perc99_list_ecume_sea,color='orchid',linestyle='-',label="Ecume")
 plt.plot(times_list,Perc99_list_wasp_sea,color='orange',linestyle='-',label="Wasp")
 
-#ax1.plot(times_list,Perc99_list_nosen_sea,linewidth=1,color='darkviolet',linestyle='-.',label="NOSEN")
-#ax1.plot(times_list,Perc99_list_nolat_sea,linewidth=1,color='gold',linestyle='-.',label="NOLAT")
-#ax1.plot(times_list,Perc99_list_nomom_sea,linewidth=1,color='cyan',linestyle='-.',label="NOMOM")
-
-#ax1.plot(times_list,Perc99_list_coare_land,linewidth=3,color='green',linestyle='-',label="COARE land")
-#ax1.plot(times_list,Perc99_list_andrea_land,linewidth=3,color='blue',linestyle='-',label="ANDREA land")
-#ax1.plot(times_list,Perc99_list_ecume_land,linewidth=3,color='red',linestyle='-',label="ECUME land")
-#ax1.plot(times_list,Perc99_list_wasp_land,linewidth=3,color='orange',linestyle='-',label="WASP land")
-
 plt.xlabel('Time (UTC)', fontsize=12)
 plt.ylabel('10m Wind speed ($\mathregular{m\, s^{-1}}$)', fontsize=12)
 plt.title('99th percentile', loc='left', fontsize=12)
-#plt.xticks(np.arange(12, 19, 1)) 
-#ax1.set_yticks(np.arange(20,35,1))
 plt.yticks(fontsize=12)
 plt.gcf().autofmt_xdate()
 myFmt = mdates.DateFormatter('%H:%M')
@@ -173,6 +161,3 @@ plt.xticks(fontsize=12)
 plt.legend(fontsize=12)
 
 plt.savefig('99Percentile_Wind10m_sea.png')
-plt.savefig('99Percentile_Wind10m_sea.pdf')
-
-#plt.savefig('99Percentile_Wind10m_sea_test_sensibility.pdf')
