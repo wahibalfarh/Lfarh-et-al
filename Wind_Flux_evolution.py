@@ -1,44 +1,38 @@
 import xarray as xr
-import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.dates as mdates
-from matplotlib.colors import ListedColormap
-from matplotlib.colors import LinearSegmentedColormap
-import sys
-import gzip
-import csv
 import pandas as pd
 
-####Données Simulation
-###1530
+#########################################
+###     Read Meso-NH data at 1530     ###
+#########################################
+
 ncfile_andrea = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NDREA/NDREA.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
 ncfile_ecume = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/ECUME/ECUME.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
 ncfile_wasp = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/WASP/WASP2.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
 ncfile_nosen = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOSEN/NOSEN.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
 ncfile_nolat = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOLAT/NOLAT.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
-
-####Données Simulations 2D
-###1530
 ncfile_coare = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/COARE/ADRIA.2.SEG04.002DIA2D.zoom.nc", mask_and_scale=True, decode_times=True)
 ncfile_nomom = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOMOM/NOMOM.2.SEG02.001DIA2D.nc", mask_and_scale=True, decode_times=True)
 
-
+### Zommed domain
 left = 8.3
 bottom = 41.62
 right = 8.55
 top = 41.8
 
+### Read coordinates
 longitude = ncfile_coare.coords['longitude'][0,:].values
 latitude = ncfile_coare.coords['latitude'][:,0].values
 
-### zoom sur le domaine
+### Zoom
 x0 = np.searchsorted( longitude, left )
 x1 = np.searchsorted( longitude, right )
 y0 = np.searchsorted( latitude, bottom )
 y1 = np.searchsorted( latitude, top )
 
+### Read variables of each simulation 
 ch_latente1 = ncfile_coare.data_vars['LE_SEA'][y0:y1,x0:x1]
 Latente1 = ch_latente1.where(ch_latente1!=999)
 U1 = ncfile_coare.data_vars['UM10'][0,y0:y1,x0:x1]
@@ -102,6 +96,7 @@ FMU7 = ncfile_nomom.data_vars['FMU_SEA'][y0:y1,x0:x1]
 FMV7 = ncfile_nomom.data_vars['FMV_SEA'][y0:y1,x0:x1]
 FM7 = np.sqrt( FMU7**2 +FMV7**2 )
 
+### Plot figure
 fig, ax1 = plt.subplots()
 
 scatter1 = ax1.scatter(WIND1[::5, ::5], FM1[::5, ::5], color='green', s=0.5, label="Coare")
@@ -109,32 +104,19 @@ scatter2 = ax1.scatter(WIND2[::5, ::5], FM2[::5, ::5], color='royalblue', s=0.5,
 scatter3 = ax1.scatter(WIND3[::5, ::5], FM3[::5, ::5], color='orchid', s=0.5, label="Ecume")
 scatter4 = ax1.scatter(WIND4[::5, ::5], FM4[::5, ::5], color='orange', s=0.5, label="Wasp")
 
-
-#scatter1 = ax1.scatter(WIND1,Latente1, color='green', s=0.01, label="Coare")
-#scatter2 = ax1.scatter(WIND2, Latente2, color='royalblue', s=0.01, label="Andrea")
-#scatter3 = ax1.scatter(WIND3, Latente3, color='orchid', s=0.01, label="Ecume")
-#scatter4 = ax1.scatter(WIND4, Latente4, color='orange', s=0.01, label="Wasp")
-#scatter5 = ax1.scatter(WIND7, Latente7, color='cyan', s=0.1, label="NOMOM")
-
 scatters = [scatter1, scatter2, scatter3, scatter4]
 labels = [scatter.get_label() for scatter in scatters]
-
-# Créer la légende avec tous les scatter plots et étiquettes
 handler = plt.legend(handles=scatters, labels=labels, fontsize=12)
 
-# Définir la taille des marqueurs spécifiques à la légende
 for legend_handle in handler.legendHandles:
     legend_handle.set_sizes([40])
 
 ax1.set_xlabel("10m-wind speed ($m.s^{-1}$)",fontsize=12)
-#ax1.set_ylim(0,5000)
 ax1.set_xlim(10,50)
-#ax1.set_ylim(0,1800)
 #ax1.set_ylabel("Latent heat flux ($W.m^{-2}$)",fontsize=12)
 ax1.set_ylabel("Momentum flux ($m².s^{-2}$ )",fontsize=12)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 
 plt.savefig('Evolution_Momentum_15h30_param.png')
-#plt.savefig('Evolution_Latente_15h30_param.pdf')
-#plt.savefig('Evolution_Ch_sensible_vent_10m_Simulation_200m.png')
+
