@@ -9,8 +9,6 @@ import sys
 EXP = '200m'
 
 ### define variable
-#varname_res = 'SBG_TKE'
-#varname_sbg = 'SBG_TKE'
 varname = 'SBG_KM'
 #varname = 'MEAN_THV'
 
@@ -39,7 +37,6 @@ levels_wasp = mnh_wasp.data_vars[varname+'___TRAJZ'][0,0,:]
 ################################
 fig, ax = plt.subplots(figsize=(6,8))
 
-
 ax.plot(var_coare, levels_coare, c='green',linestyle='-',label='Coare')
 ax.plot(var_andrea,levels_andrea, c='royalblue',linestyle='-',label='Andreas')
 ax.plot(var_ecume, levels_ecume, c='orchid',linestyle='-',label='Ecume')
@@ -63,9 +60,9 @@ ax.set_xlabel('Momentum eddy diffusivity (m$^2$ s$^{-1}$)')
 #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 plt.ylabel('Height (m)',fontsize=12)
 plt.legend(loc=2,fontsize=12)
-#ax.legend()
+ax.legend()
 plt.savefig('profile_simulation_param_SBG_KM.png')
-#plt.savefig('profile_simulation_param_RES_KE.pdf')
+
 
 
 plt.close()
