@@ -1,3 +1,4 @@
+
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,39 +6,54 @@ from matplotlib import cm
 from matplotlib import colors
 from matplotlib.colors import ListedColormap
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.patches as patches
+from matplotlib.patches import Rectangle
 import sys
 import wrf
 
+
 VAR_name = 'MRC'
+
 Simulation = 'dx=200m'
 
 ### cross-section height in meters
-height =1000
+height = 200
 
-### zoomed domain coordinates
-left = 8.18
-bottom = 41.47
-right = 8.42
-top = 41.65
 
-### trace coordinates in geographical coordinates
-lon_start = 8.275
-lat_start = 41.628
-lon_end = 8.365
-lat_end = 41.55
+###1530
+left = 8.3
+bottom = 41.62
+right = 8.56
+top = 41.8
 
-#########################
-### Read Meso-NH data ###
-#########################
+###1530
+lon_start =  8.38
+lat_start = 41.758
+lon_end = 8.55
+lat_end = 41.68
 
-### Données Simulation
-ncfile= xr.open_dataset("/gpfs/work/p20024/lfarh/ADRIA/ADRIA.1.SEG04.001DIA3D.nc", mask_and_scale=True, decode_times=True, decode_coords=True)
+###############################
+### Read Meso-NH data
+###########################
 
-### read data
+
+####Données Simulation
+##1530
+#ncfile = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/COARE/ADRIA.2.SEG04.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+#ncfile = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NDREA/NDREA.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+#ncfile = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/ECUME/ECUME.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+#ncfile = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/WASP/WASP2.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+#ncfile = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOSEN/NOSEN.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+#ncfile  = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOLAT/NOLAT.2.SEG01.002DIA3D.zoom.nc", mask_and_scale=True, decode_times=True)
+ncfile = xr.open_dataset("/tmpdir/lfarh/New_flux_turbulents/NOMOM/NOMOM.2.SEG02.001DIA3D.nc", mask_and_scale=True, decode_times=True)
+#ncfile= xr.open_dataset("/gpfs/work/p20024/lfarh/ADRIA/ADRIA.2.SEG04.001DIA3D.nc", mask_and_scale=True, decode_times=True, decode_coords=True)
+
 time = ncfile.coords['time']
 longitude = ncfile.coords['longitude'][0,:].values
 latitude = ncfile.coords['latitude'][:,0].values
-XHAT = ncfile.coords['XHAT'].values
+
+#XHAT = ncfile.coords['XHAT'].values
+XHAT = ncfile.data_vars['XHAT'].values
 
 ### define zoom
 x0 = np.searchsorted( longitude, left )
@@ -45,9 +61,14 @@ x1 = np.searchsorted( longitude, right )
 y0 = np.searchsorted( latitude, bottom )
 y1 = np.searchsorted( latitude, top )
 
+
 ### read varible of interest
-VAR = ncfile.data_vars[VAR_name][0,:,y0:y1,x0:x1]
- 
+VAR = ncfile.data_vars['MRC'][0,:,y0:y1,x0:x1]
+MRV = ncfile.data_vars['MRV'][0,:,y0:y1,x0:x1] 
+
+#VAR = MRC + MRV
+
+
 ###  read and compute wind speed
 U = ncfile.data_vars['UT'][0,:,y0:y1,x0:x1]
 V = ncfile.data_vars['VT'][0,:,y0:y1,x0:x1]
@@ -60,14 +81,16 @@ U.coords['nj_u'] = U.coords['latitude_u'][:,0].values
 V.coords['ni_v'] = V.coords['longitude_v'][0,:].values
 V.coords['nj_v'] = V.coords['latitude_v'][:,0].values
 
+
 ### read orography
 #ZS =  ncfile.data_vars['ZS'][y0:y1,x0:x1]
 
 ### read altitude
 ALT =  ncfile.data_vars['ALT'][:,y0:y1,x0:x1]
 
+
 ### assign coordinates
-for field in ALT,VAR,MRC:
+for field in ALT,VAR:
     field.coords['ni'] = longitude[x0:x1]
     field.coords['nj'] = latitude[y0:y1]
 
@@ -78,17 +101,20 @@ print("compute cross-section")
 
 ### interpolate
 VAR_section = wrf.interplevel( field3d=VAR, vert=ALT, desiredlev=height )
-WIND_section = wrf.interplevel( field3d=WIND, vert=ALT, desiredlev=height )
-MRC_section = wrf.interplevel( field3d=MRC, vert=ALT, desiredlev=height )
+WIND_section = wrf.interplevel( field3d=WIND, vert=ALT, desiredlev=height_wind )
+#MRC_section = wrf.interplevel( field3d=MRC, vert=ALT, desiredlev=height )
 
 ### assign coordinates
 WIND_section['dim_1'] = VAR_section['nj'].values
 WIND_section['dim_2'] = VAR_section['ni'].values
 WIND_section.name = 'Wind speed ($m.s^{-1}$)'
 
-###################
+
+###################################
+
 ### plot figure ###
-###################
+print("plot horizontal cross-section")
+#################################"
 
 ### open figure
 plt.figure()
@@ -113,25 +139,49 @@ def CustomColormap(Name = 'default'):
                                                       'rebeccapurple'
                                                          ])   
 
+
+
+
        my_cmap = CustCmap(np.arange(CustCmap.N))
        my_cmap[:, -1] = np.linspace(0.3, 1, CustCmap.N)
        CustCmap = ListedColormap(my_cmap)
+
+
    return CustCmap
+
 
 CustCmap = CustomColormap('test')
 
 ### plot surfaces
-VAR_section[1:-1,1:-1].plot.contourf( cmap='Pastel1_r', levels=np.arange(0,0.8,0.005))
+WIND_section.plot.contourf( cmap = CustCmap, levels=np.arange(20,65,0.5))
+#VAR_section.plot.contourf( cmap = 'bwr', levels=np.arange(-3.5,3.7,0.1))
+#VAR_section[1:-1,1:-1].plot.contourf( cmap='Pastel1_r', levels=np.arange(0,1,0.001))
 
 ### add orography
-ZS[1:-1,1:-1].plot.contour( colors="black",levels=[0])
+#ZS[1:-1,1:-1].plot.contour( colors="black",levels=[0])
 
-### add trace coordinates
 plt.plot( [lon_start,lon_end], [lat_start,lat_end], linewidth=2, color='black' )
+
+##domaine_diag_LES
+#rect = patches.Rectangle((8.35, 41.66), 0.17, 0.15, linewidth=3, edgecolor='blue', facecolor='none')
+
+# Add the patch to the Axes
+#ax.add_patch(rect)
+### add contours
+#contours1 = WIND_section.plot.contour( colors='black', levels=[46],linewidth=0.3)
+
 
 plt.xlabel('Longitude (°E)')
 plt.ylabel('Latitude (°N)')
 
-plt.savefig('CH_Meso1000_MRC_1515_level1000.png')
 
+#vecteurs = ax.quiver(U['ni_u'][0:60:10], U['nj_u'][0:60:10], U[0,0:60:10,0:60:10], V[0,0:60:0,0:60:10], color='crimson',scale =200)
+vecteurs = ax.quiver(U['ni_u'][20:150:30], U['nj_u'][20:150:30], U[0,20:150:30,20:150:30], V[0,20:150:30,20:150:30], color='crimson',scale =200)
+#vecteurs = ax.quiver(U['ni_u'][2:100:10], U['nj_u'][2:100:10], U[0,2:100:10,2:100:10], V[0,2:100:10,2:100:10], color='crimson',scale =180)
+
+		
+plt.legend(title='NoM',loc=2)
+
+plt.savefig('CH_NoM_WIND_1530.png')
+#plt.savefig('CH_Nommf_WIND_1530.pdf')
 
